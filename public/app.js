@@ -29,7 +29,7 @@ const TURNOS = {
     3: "Noite"
 };
 
-// 1. AUTENTICAÇÃO E CONTROLE DE SESSÃO
+// #region 1. AUTENTICAÇÃO E CONTROLE DE SESSÃO
 
 document.addEventListener("DOMContentLoaded", () => {
     configurarLogin();
@@ -58,7 +58,7 @@ if (
         id: 0,
         nome: "Ana Souza",
         email: "professor@unimatricula.br",
-        perfil: "professor"
+        tipo: "professor"
     };
 
     localStorage.setItem(
@@ -98,8 +98,8 @@ if (
         }
     });
 }
-
-// SUPLEMENTO: MOSTRAR / OCULTAR SENHA (OLHINHO)
+// #endregion
+// #region SUPLEMENTO: MOSTRAR / OCULTAR SENHA (OLHINHO)
 
 document.addEventListener("DOMContentLoaded", () => {
     const toggleBtn = document.getElementById("togglePassword");
@@ -145,73 +145,65 @@ async function iniciarSistema() {
     
     if (loginScreen) loginScreen.style.display = "none";
     if (appContainer) appContainer.style.display = "flex";
-
     
-const nomeExibicao =
-    usuarioLogado.perfil === "aluno"
-        ? "aluno@unimatricula.br"
-        : usuarioLogado.nome;
+    const nomeExibicao = usuarioLogado.nome
+    const emailExibicao = usuarioLogado.email;
 
-const emailExibicao = usuarioLogado.email;
+    const nomeEl = document.getElementById("userName");
+    const emailEl = document.getElementById("userEmail");
+    const inicialEl = document.getElementById("userInitial");
 
+    if (nomeEl) nomeEl.textContent = nomeExibicao;
+    if (emailEl) emailEl.textContent = emailExibicao;
 
-const nomeEl = document.getElementById("userName");
-const emailEl = document.getElementById("userEmail");
-const inicialEl = document.getElementById("userInitial");
-
-if (nomeEl) nomeEl.textContent = nomeExibicao;
-if (emailEl) emailEl.textContent = emailExibicao;
-
-if (inicialEl) {
-    inicialEl.textContent = nomeExibicao
-        .split(" ")
-        .map(parte => parte[0])
-        .slice(0, 2)
-        .join("")
-        .toUpperCase();
+    if (inicialEl) {
+        inicialEl.textContent = nomeExibicao
+            .split(" ")
+            .map(parte => parte[0])
+            .slice(0, 2)
+            .join("")
+            .toUpperCase();
 }
     const badgeEl = document.getElementById("userRoleBadge");
 
-const nomesPerfis = {
+const nomesTipos = {
     aluno: "Portal do Aluno",
-    instituicao: "Gestão Acadêmica",
+    admin: "Gestão Acadêmica",
     professor: "Portal do Professor"
 };
 
 if (badgeEl) {
     badgeEl.textContent =
-        nomesPerfis[usuarioLogado.perfil] || "Portal Acadêmico";
+        nomesTipos[usuarioLogado.tipo] || "Portal Acadêmico";
 }
 
 document.querySelectorAll(".menu-instituicao").forEach(el => {
-    el.style.display =
-        usuarioLogado.perfil === "instituicao" ? "flex" : "none";
+    el.style.display = usuarioLogado.tipo === "admin" ? "flex" : "none";
 });
 
 document.querySelectorAll(".menu-aluno").forEach(el => {
-    el.style.display =
-        usuarioLogado.perfil === "aluno" ? "flex" : "none";
+    el.style.display = usuarioLogado.tipo === "aluno" ? "flex" : "none";
 });
 
 document.querySelectorAll(".menu-professor").forEach(el => {
     el.style.display =
-        usuarioLogado.perfil === "professor" ? "flex" : "none";
+usuarioLogado.tipo === "professor" ? "flex" : "none";
 });
 
-    if (badgeEl) badgeEl.textContent = usuarioLogado.perfil === 'instituicao' ? 'Gestão Acadêmica' : 'Portal do Aluno';
+    if (badgeEl) badgeEl.textContent = usuarioLogado.tipo === 'admin' ? 'Gestão Acadêmica' : 'Portal do Aluno';
 
     document.querySelectorAll(".menu-instituicao").forEach(el => {
-        el.style.display = usuarioLogado.perfil === 'instituicao' ? 'flex' : 'none';
+        el.style.display = usuarioLogado.tipo === 'admin' ? 'flex' : 'none';
     });
 
     await carregarDadosDoServidor();
 
 navegarPara(
-    usuarioLogado.perfil === "professor"
+    usuarioLogado.tipo === "professor"
         ? "professorDashboard"
         : "dashboard"
 );
-    navegarPara("dashboard");
+    // navegarPara("dashboard");
 }
 
 async function carregarDadosDoServidor() {
@@ -225,7 +217,7 @@ async function carregarDadosDoServidor() {
         dados.turmas = await resTurmas.json();
 
         // O professor usa os dados das turmas, sem consultar matrículas individuais
-        if (usuarioLogado.perfil === "professor") {
+        if (usuarioLogado.tipo === "professor") {
             dados.matriculas = [];
             renderizarTudo();
             return;
@@ -252,8 +244,8 @@ async function carregarDadosDoServidor() {
         mostrarMensagem("Erro ao carregar dados do servidor.", "danger");
     }
 }
-
-// 2. FUNÇÕES AUXILIARES
+// #endregion
+// #region 2. FUNÇÕES AUXILIARES
 
 function obterDisciplina(id) {
     return dados.disciplinas.find(disciplina => disciplina.id === Number(id) || disciplina.codigo === id);
@@ -388,8 +380,8 @@ function confirmarAcao(mensagem, callback, titulo = "Confirmar ação") {
 
     modal.show();
 }
-
-// 3. NAVEGAÇÃO
+// #endregion
+// #region 3. NAVEGAÇÃO
 
 const titulosPaginas = {
     dashboard: ["Dashboard", "Visão geral do sistema acadêmico"],
@@ -398,6 +390,7 @@ const titulosPaginas = {
     disciplinas: ["Disciplinas", "Gerenciamento do catálogo acadêmico"],
     turmas: ["Gerenciar turmas", "Cadastro e gerenciamento das ofertas"],
     alunos: ["Gestão de alunos", "Cadastro e gerenciamento de alunos"],
+    professoresGestao: ["Gestão de Professores", "Cadastro e gerenciamento de professores"],
     professorDashboard: ["Dashboard", "Resumo das suas atividades acadêmicas"],
     professorTurmas: ["Minhas turmas", "Consulte as turmas atribuídas a você"],
     professorAlunos: ["Alunos matriculados", "Acompanhe os alunos de suas turmas"]
@@ -447,9 +440,10 @@ function renderizarTudo() {
     renderizarPainelProfessor();
     renderizarTurmas();
     carregarAlunosAdmin();
+    carregarSelectProfessores();
 }
-
-// 4. DASHBOARD
+// #endregion
+// #region 4. DASHBOARD
 
 function renderizarDashboard() {
     const elDisc = document.getElementById("totalDisciplinas");
@@ -481,7 +475,7 @@ function renderizarDashboard() {
                 <span class="subject-name">${escaparHTML(obterNomeDisciplina(turma.codigoDisciplina || turma.disciplinaId))}</span>
                 <span class="subject-code">Turma ${escaparHTML(obterCodigoTurma(turma))}</span>
             </td>
-            <td>${escaparHTML(turma.professor)}</td>
+            <td>${escaparHTML(turma.nomeProfessor)}</td>
             <td>
                 ${escaparHTML(formatarDia(turma.dia))}
                 <br>
@@ -495,21 +489,13 @@ function renderizarDashboard() {
 }
 
 // --------------------------------------------------
-// ÁREA DO PROFESSOR
+// #region ÁREA DO PROFESSOR
 // --------------------------------------------------
 
 function obterTurmasDoProfessor() {
-    if (usuarioLogado?.perfil !== "professor") return [];
+    if (usuarioLogado?.tipo !== "professor") return [];
 
-    const nomeProfessor = (usuarioLogado.nome || "")
-        .trim()
-        .toLocaleLowerCase("pt-BR");
-
-    return dados.turmas.filter(turma =>
-        (turma.professor || "")
-            .trim()
-            .toLocaleLowerCase("pt-BR") === nomeProfessor
-    );
+    return dados.turmas.filter(turma => Number(turma.idProfessor) === Number(usuarioLogado.id));
 }
 
 function renderizarPainelProfessor() {
@@ -573,8 +559,8 @@ function renderizarPainelProfessor() {
             : vazio("Nenhuma turma encontrada para este professor.");
     }
 }
-
-// 5. OFERTAS E FILTROS
+// #endregion
+// #region 5. OFERTAS E FILTROS
 
 function renderizarOfertas() {
     const inputPesquisa = document.getElementById("filtroOferta");
@@ -590,7 +576,7 @@ function renderizarOfertas() {
 
     const turmasFiltradas = dados.turmas.filter(turma => {
         const nome = obterNomeDisciplina(turma.codigoDisciplina || turma.disciplinaId).toLocaleLowerCase("pt-BR");
-        const professor = (turma.professor || "").toLocaleLowerCase("pt-BR");
+        const professor = (turma.nomeProfessor || "").toLocaleLowerCase("pt-BR");
 
         const correspondePesquisa = nome.includes(pesquisa) || professor.includes(pesquisa);
         const correspondeTurno = !turno || Number(turma.turno) === Number(turno);
@@ -617,7 +603,7 @@ function renderizarOfertas() {
         const jaMatriculado = matriculado(turma.id);
 
         let botao;
-        if (usuarioLogado.perfil === 'instituicao') {
+        if (usuarioLogado.tipo === 'admin') {
             botao = `<small class="text-muted">Apenas para alunos</small>`;
         } else if (jaMatriculado) {
             botao = `<button class="btn btn-outline-success" disabled><i class="bi bi-check-circle me-1"></i>Matriculado</button>`;
@@ -634,7 +620,7 @@ function renderizarOfertas() {
                     <h4>${escaparHTML(obterNomeDisciplina(turma.codigoDisciplina || turma.disciplinaId))}</h4>
                     <span class="offer-code">Turma ${escaparHTML(obterCodigoTurma(turma))}</span>
                     <div class="offer-details">
-                        <div><i class="bi bi-person"></i> ${escaparHTML(turma.professor)}</div>
+                        <div><i class="bi bi-person"></i> ${escaparHTML(turma.nomeProfessor || "Sem professor")}</div>
                         <div><i class="bi bi-calendar3"></i> ${escaparHTML(formatarDia(turma.dia))}</div>
                         <div><i class="bi bi-clock"></i> ${escaparHTML(turma.horario || "08:00-09:40")} · ${escaparHTML(formatarTurno(turma.turno))}</div>
                         <div><i class="bi bi-people"></i> ${vagas} de ${turma.vagasTotais} vagas disponíveis</div>
@@ -658,11 +644,11 @@ function renderizarOfertas() {
         el.addEventListener("change", renderizarOfertas);
     }
 });
-
-// 6. MATRÍCULAS COM API
+// #endregion
+// #region 6. MATRÍCULAS COM API
 
 async function realizarMatricula(turmaId) {
-    if (usuarioLogado.perfil !== 'aluno') {
+    if (usuarioLogado.tipo !== 'aluno') {
         mostrarMensagem("Apenas alunos podem realizar matrículas.", "warning");
         return;
     }
@@ -755,7 +741,7 @@ function renderizarMatriculas() {
                     <span class="subject-name">${escaparHTML(obterNomeDisciplina(turma.codigoDisciplina || turma.disciplinaId))}</span>
                     <span class="subject-code">Turma ${escaparHTML(obterCodigoTurma(turma))}</span>
                 </td>
-                <td>${escaparHTML(turma.professor)}</td>
+                <td>${escaparHTML(turma.nomeProfessor || "Sem professor")}</td>
                 <td>
                     ${escaparHTML(formatarDia(turma.dia))}
                     <br>
@@ -771,8 +757,8 @@ function renderizarMatriculas() {
         `;
     }).join("");
 }
-
-// 7. DISCIPLINAS COM API
+// #endregion
+// #region 7. DISCIPLINAS COM API
 
 function renderizarDisciplinas() {
     const corpo = document.getElementById("listaDisciplinas");
@@ -785,7 +771,11 @@ function renderizarDisciplinas() {
     }
 
     corpo.innerHTML = dados.disciplinas.map(disciplina => {
-        const possuiTurmas = dados.turmas.some(turma => turma.codigoDisciplina === disciplina.codigo || turma.disciplinaId === disciplina.id);
+        const possuiTurmas = dados.turmas.some(turma => {
+        const codigoTurma = String(turma.codigoDisciplina || turma.disciplina_codigo || "").trim();
+        const codigoDisc = String(disciplina.codigo || "").trim();
+        return codigoTurma === codigoDisc;
+    });
 
         return `
             <tr>
@@ -860,8 +850,8 @@ async function excluirDisciplina(codigo) {
         "Excluir disciplina"
     );
 }
-
-// GERENCIAMENTO DE TURMAS COM API
+// #endregion
+// #region GERENCIAMENTO DE TURMAS COM API
 
 function atualizarSelectDisciplinas() {
     const select = document.getElementById("disciplinaTurma");
@@ -886,13 +876,16 @@ if (formTurma) {
         evento.preventDefault();
 
         const codigoDisciplina = document.getElementById("disciplinaTurma").value;
-        const professor = document.getElementById("professorTurma").value.trim();
+        
+        // 🔄 Correção aplicada aqui: document.getElementById correto
+        const idProfessor = Number(document.getElementById("professorTurma").value);
+        
         const dia = Number(document.getElementById("diaTurma").value);
         const turno = Number(document.getElementById("turnoTurma").value);
         const horario = document.getElementById("horarioTurma").value.trim();
         const vagasTotais = Number(document.getElementById("vagasTurma").value);
 
-        if (!codigoDisciplina || !professor || !dia || !turno || !horario || !vagasTotais) {
+        if (!codigoDisciplina || !idProfessor || !dia || !turno || !horario || !vagasTotais) {
             mostrarMensagem("Preencha todos os campos da turma.", "warning");
             return;
         }
@@ -901,11 +894,13 @@ if (formTurma) {
             const resposta = await fetch(`${API_URL}/turmas`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ codigoDisciplina, professor, dia, turno, horario, vagasTotais })
+                body: JSON.stringify({ codigoDisciplina, idProfessor, dia, turno, horario, vagasTotais })
             });
 
+            const resultado = await resposta.json();
+
             if (!resposta.ok) {
-                mostrarMensagem("Erro ao ofertar turma.", "warning");
+                mostrarMensagem(resultado.erro || "Erro ao ofertar turma.", "warning");
                 return;
             }
 
@@ -935,7 +930,7 @@ function renderizarTurmas() {
         return `
             <tr>
                 <td>${escaparHTML(obterNomeDisciplina(turma.codigoDisciplina || turma.disciplinaId))}</td>
-                <td>${escaparHTML(turma.professor)}</td>
+                <td>${escaparHTML(turma.nomeProfessor || "Sem professor")}</td>
                 <td><span class="badge-soft">${escaparHTML(obterCodigoTurma(turma))}</span></td>
                 <td>
                     ${escaparHTML(formatarDia(turma.dia))} · ${escaparHTML(formatarTurno(turma.turno))}
@@ -1000,10 +995,16 @@ document.addEventListener("click", evento => {
         excluirTurma(Number(botaoExcluirTurma.dataset.deleteTurma));
     }
 
-        const botaoExcluirAluno = evento.target.closest("[data-excluir-aluno]");
+    const botaoExcluirAluno = evento.target.closest("[data-excluir-aluno]");
 
     if (botaoExcluirAluno) {
         excluirAluno(Number(botaoExcluirAluno.dataset.excluirAluno));
+        return;
+    }
+
+    const botaoExcluirProfessor = evento.target.closest("[data-excluir-professor]");
+    if(botaoExcluirProfessor){
+        excluirProfessor(Number(botaoExcluirProfessor.dataset.excluirProfessor));
         return;
     }
 });
@@ -1061,8 +1062,54 @@ async function carregarAlunosAdmin() {
     }
 }
 
+async function carregarProfessoresAdmin() {
+    const tbody = document.getElementById("tabelaProfessoresCorpo");
+    if (!tbody) return;
 
-// Cadastro de aluno
+    try {
+        const resposta = await fetch(`${API_URL}/gestaoprofessores`);
+
+        if (!resposta.ok) {
+            throw new Error("Erro ao buscar professores.");
+        }
+
+        const professores = await resposta.json();
+
+        if (!Array.isArray(professores) || professores.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="4" class="text-center text-muted">
+                        Nenhum professor cadastrado.
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        tbody.innerHTML = professores.map(prof => `
+            <tr>
+                <td>${escaparHTML(prof.id)}</td>
+                <td>${escaparHTML(prof.nome || prof.name)}</td>
+                <td>${escaparHTML(prof.email)}</td>
+                <td>
+                    <button
+                        type="button"
+                        class="btn btn-outline-danger btn-sm"
+                        data-excluir-professor="${escaparHTML(prof.id)}">
+                        <i class="bi bi-trash"></i> Excluir
+                    </button>
+                </td>
+            </tr>
+        `).join("");
+
+    } catch (erro) {
+        console.error("Erro ao carregar professores:", erro);
+        mostrarMensagem("Não foi possível carregar os professores.", "danger");
+    }
+}
+
+
+// #region Cadastro de aluno
 const formCadastrarAluno = document.getElementById("formCadastrarAluno");
 
 if (formCadastrarAluno) {
@@ -1140,4 +1187,115 @@ async function excluirAluno(alunoId) {
         "Excluir aluno"
     );
 }
+// #region Cadastro de professor
+const formCadastrarProfessor = document.getElementById("formCadastrarProfessor");
 
+if (formCadastrarProfessor) {
+    formCadastrarProfessor.addEventListener("submit", async evento => {
+        evento.preventDefault();
+
+        const nome = document.getElementById("adminNomeProfessor")?.value.trim();
+        const email = document.getElementById("adminEmailProfessor")?.value.trim();
+
+        if (!nome || !email) {
+            mostrarMensagem("Preencha o nome e o e-mail.", "warning");
+            return;
+        }
+
+        try {
+            const resposta = await fetch(`${API_URL}/gestaoprofessores`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ nome, email })
+            });
+
+            const resultado = await resposta.json();
+
+            if (!resposta.ok) {
+                mostrarMensagem(
+                    resultado.erro || resultado.error || "Erro ao cadastrar professor.",
+                    "danger"
+                );
+                return;
+            }
+
+            formCadastrarProfessor.reset();
+
+            await carregarProfessoresAdmin();
+
+            await carregarSelectProfessores();
+
+            mostrarMensagem("Professor cadastrado com sucesso!");
+
+        } catch (erro) {
+            console.error("Erro ao cadastrar professor:", erro);
+            mostrarMensagem("Não foi possível conectar ao servidor.", "danger");
+        }
+    });
+}
+
+async function excluirProfessor(professorId) {
+    confirmarAcao(
+        "Deseja realmente excluir este professor? Esta operação não poderá ser desfeita.",
+        async () => {
+            try {
+                const resposta = await fetch(`${API_URL}/gestaoprofessores/${professorId}`, {
+                    method: "DELETE"
+                });
+
+                const resultado = await resposta.json();
+
+                if (!resposta.ok) {
+                    mostrarMensagem(
+                        resultado.erro || resultado.error || "Não foi possível excluir o professor.",
+                        "danger"
+                    );
+                    return;
+                }
+
+                await carregarProfessoresAdmin();
+
+                await carregarSelectProfessores();
+
+                mostrarMensagem("Professor excluído com sucesso!");
+
+            } catch (erro) {
+                console.error("Erro ao excluir professor:", erro);
+                mostrarMensagem("Não foi possível conectar ao servidor.", "danger");
+            }
+        },
+        "Excluir professor"
+    );
+}
+// #endregion
+
+async function carregarSelectProfessores() {
+    const selectProf = document.getElementById("professorTurma");
+    if (!selectProf) return;
+
+    try {
+        const resposta = await fetch(`${API_URL}/gestaoprofessores`);
+        if (!resposta.ok) throw new Error("Erro ao buscar professores.");
+
+        const professores = await resposta.json();
+
+        // 🔄 Garante que a resposta é um array válido antes de mapear
+        if (!Array.isArray(professores) || professores.length === 0) {
+            selectProf.innerHTML = `<option value="">Nenhum professor cadastrado</option>`;
+            return;
+        }
+
+        // Insere as opções no select dinamicamente com o id e o nome
+        selectProf.innerHTML = `
+            <option value="">Selecione um professor</option>
+            ${professores.map(prof => `
+                <option value="${prof.id}">${escaparHTML(prof.nome)}</option>
+            `).join("")}
+        `;
+    } catch (erro) {
+        console.error("Erro ao carregar select de professores:", erro);
+        mostrarMensagem("Erro ao carregar lista de professores.", "warning");
+    }
+}

@@ -24,12 +24,29 @@ const db = new sqlite3.Database('./unimatricula.db', (err) => {
 // Criar tabelas e usuários iniciais com Hash
 function criarTabelasESeed() {
     db.serialize(async () => {
-        db.run(`CREATE TABLE IF NOT EXISTS usuarios (
+        
+        // 1. Tabela de Alunos (Exclusiva para discentes)
+        db.run(`CREATE TABLE IF NOT EXISTS alunos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             nome TEXT NOT NULL,
             email TEXT UNIQUE NOT NULL,
-            senha TEXT NOT NULL,
-            perfil TEXT NOT NULL -- 'aluno' ou 'instituicao'
+            senha TEXT NOT NULL
+        )`);
+
+        // 2. Tabela de Professores
+        db.run(`CREATE TABLE IF NOT EXISTS professores (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nome TEXT NOT NULL,
+            email TEXT UNIQUE NOT NULL,
+            senha TEXT NOT NULL
+        )`);
+
+        // 3. Tabela de Administradores
+        db.run(`CREATE TABLE IF NOT EXISTS admins (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nome TEXT NOT NULL,
+            email TEXT UNIQUE NOT NULL,
+            senha TEXT NOT NULL
         )`);
 
         db.run(`CREATE TABLE IF NOT EXISTS disciplinas (
@@ -40,47 +57,68 @@ function criarTabelasESeed() {
 
         db.run(`CREATE TABLE IF NOT EXISTS turmas (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            codigoDisciplina TEXT,
-            professor TEXT,
-            dia INTEGER,
-            turno INTEGER,
-            horario TEXT,
-            vagasTotais INTEGER,
+            codigoDisciplina TEXT NOT NULL,
+            idProfessor INTEGER NOT NULL,
+            dia INTEGER NOT NULL,
+            turno INTEGER NOT NULL,
+            horario TEXT NOT NULL,
+            vagasTotais INTEGER NOT NULL,
             vagasOcupadas INTEGER DEFAULT 0,
-            FOREIGN KEY(codigoDisciplina) REFERENCES disciplinas(codigo)
+            FOREIGN KEY(codigoDisciplina) REFERENCES disciplinas(codigo),
+            FOREIGN KEY(idProfessor) REFERENCES professores(id)
         )`);
 
         db.run(`CREATE TABLE IF NOT EXISTS matriculas (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             alunoId INTEGER,
             turmaId INTEGER,
-            FOREIGN KEY(alunoId) REFERENCES usuarios(id),
+            FOREIGN KEY(alunoId) REFERENCES alunos(id),
             FOREIGN KEY(turmaId) REFERENCES turmas(id)
         )`);
 
         // Inserir usuários padrão se a tabela estiver vazia (Senha padrão criptografada: '123456')
-        db.get("SELECT COUNT(*) as count FROM usuarios", async (err, row) => {
+        db.get("SELECT COUNT(*) as count FROM alunos", async (err, row) => {
             if (row.count === 0) {
                 const senhaHash = await bcrypt.hash("123456", 10);
                 
-                // Usuários Alunos
-                db.run("INSERT INTO usuarios (nome, email, senha, perfil) VALUES (?, ?, ?, ?)",
-                    ["Aluno Exemplo", "aluno@unimatricula.br", senhaHash, "aluno"]
-                );
-                // Usuários Instituição / Gestores
-                db.run("INSERT INTO usuarios (nome, email, senha, perfil) VALUES (?, ?, ?, ?)", 
-                    ["Coordenação Acadêmica", "admin@unimatricula.br", senhaHash, "instituicao"]);
+                // Inserir Aluno Padrão
+                db.run(
+                    `INSERT INTO alunos (nome, email, senha) VALUES 
+                    (?, ?, ?), 
+                    (?, ?, ?), 
+                    (?, ?, ?), 
+                    (?, ?, ?), 
+                    (?, ?, ?)`,
+                    [
+                        "Carlos Silva", "carlos.silva@unimatricula.br", senhaHash,
+                        "Mariana Oliveira", "mariana.oliveira@unimatricula.br", senhaHash,
+                        "Lucas Santos", "lucas.santos@unimatricula.br", senhaHash,
+                        "Beatriz Costa", "beatriz.costa@unimatricula.br", senhaHash,
+                        "Gabriel Lima", "gabriel.lima@unimatricula.br", senhaHash
+                    ]
+);
+                // Inserir admin padrão
+                db.run("INSERT INTO admins (nome, email, senha) VALUES (?, ?, ?)", 
+                    ["Coordenação Acadêmica", "admin@unimatricula.br", senhaHash,]);
 
+                // Inserir professor padrão
+                db.run("INSERT INTO professores (nome, email, senha) VALUES (?, ?, ?)", 
+                    ["Ana Souza", "ana.souza@unimatricula.br", senhaHash]);
+                    
                 // Dados acadêmicos iniciais
                 db.run("INSERT OR IGNORE INTO disciplinas VALUES ('INF101', 'Programação Web', 60)");
                 db.run("INSERT OR IGNORE INTO disciplinas VALUES ('INF102', 'Estruturas de Dados', 80)");
                 db.run("INSERT OR IGNORE INTO disciplinas VALUES ('MAT101', 'Matemática para Computação', 60)");
+                db.run("INSERT OR IGNORE INTO disciplinas VALUES ('INF103', 'Programação II', 60)");
+                db.run("INSERT OR IGNORE INTO disciplinas VALUES ('INF104', 'Análise de Dados', 60)");
 
-                db.run("INSERT INTO turmas (codigoDisciplina, professor, dia, turno, horario, vagasTotais, vagasOcupadas) VALUES ('INF101', 'Ana Souza', 2, 1, '19:00-20:40', 30, 1)");
-                db.run("INSERT INTO turmas (codigoDisciplina, professor, dia, turno, horario, vagasTotais, vagasOcupadas) VALUES ('INF102', 'Carlos Lima', 3, 3, '21:00-22:30', 25, 0)");
+                // Turma inicial vinculada ao professor ID 1 (Ana Souza)
+                db.run("INSERT INTO turmas (codigoDisciplina, idProfessor, dia, turno, horario, vagasTotais, vagasOcupadas) VALUES ('INF101', 1, 2, 1, '19:00-20:40', 30, 1)");
                 
+                // Matrícula inicial do aluno 1 na turma 1
                 db.run("INSERT INTO matriculas (alunoId, turmaId) VALUES (1, 1)");
-                console.log("Banco de dados populado com usuários e dados acadêmicos seguros.");
+                
+                console.log("Banco de dados populado com dados acadêmicos e usuários padrão.");
             }
         });
     });
@@ -88,10 +126,41 @@ function criarTabelasESeed() {
 
 // --- ROTAS DE AUTENTICAÇÃO ---
 
+// app.post('/api/auth/login', (req, res) => {
+//     const { email, senha } = req.body;
+
+//     db.get("SELECT * FROM usuarios WHERE email = ?", [email], async (err, usuario) => {
+//         if (err || !usuario) {
+//             return res.status(401).json({ erro: "E-mail ou senha inválidos." });
+//         }
+
+//         const senhaValida = await bcrypt.compare(senha, usuario.senha);
+//         if (!senhaValida) {
+//             return res.status(401).json({ erro: "E-mail ou senha inválidos." });
+//         }
+
+//         res.json({
+//             id: usuario.id,
+//             nome: usuario.nome,
+//             email: usuario.email,
+//             tipo: usuario.tipo
+//         });
+//     });
+// });
+
 app.post('/api/auth/login', (req, res) => {
     const { email, senha } = req.body;
 
-    db.get("SELECT * FROM usuarios WHERE email = ?", [email], async (err, usuario) => {
+    // Buscamos em cada tabela definindo explicitamente o "tipo" do usuário no retorno
+    const query = `
+        SELECT id, nome, email, senha, 'aluno' AS tipo FROM alunos WHERE email = ?
+        UNION
+        SELECT id, nome, email, senha, 'professor' AS tipo FROM professores WHERE email = ?
+        UNION
+        SELECT id, nome, email, senha, 'admin' AS tipo FROM admins WHERE email = ?
+    `;
+
+    db.get(query, [email, email, email], async (err, usuario) => {
         if (err || !usuario) {
             return res.status(401).json({ erro: "E-mail ou senha inválidos." });
         }
@@ -101,27 +170,54 @@ app.post('/api/auth/login', (req, res) => {
             return res.status(401).json({ erro: "E-mail ou senha inválidos." });
         }
 
+        // Retornamos o "tipo" para o front-end saber para qual painel redirecionar
         res.json({
             id: usuario.id,
             nome: usuario.nome,
             email: usuario.email,
-            perfil: usuario.perfil
+            tipo: usuario.tipo // 'aluno', 'professor' ou 'admin'
         });
     });
 });
 
+// app.post('/api/auth/registrar', async (req, res) => {
+//     const { nome, email, senha, tipo } = req.body;
+
+//     try {
+//         const senhaHash = await bcrypt.hash(senha, 10);
+//         db.run("INSERT INTO usuarios (nome, email, senha, tipo) VALUES (?, ?, ?, ?)",
+//             [nome, email, senhaHash, tipo || 'aluno'], function(err) {
+//                 if (err) {
+//                     return res.status(400).json({ erro: "Este e-mail já está cadastrado." });
+//                 }
+//                 res.json({ mensagem: "Usuário cadastrado com sucesso!", id: this.lastID });
+//             });
+//     } catch (e) {
+//         res.status(500).json({ erro: "Erro ao criptografar senha." });
+//     }
+// });
+
 app.post('/api/auth/registrar', async (req, res) => {
-    const { nome, email, senha, perfil } = req.body;
+    const { nome, email, senha, tipo } = req.body; // 'tipo' define a tabela destino
+
+    // Valida se o tipo enviado é válido
+    const tiposPermitidos = ['aluno', 'professor', 'admin'];
+    const tabelaDestino = tiposPermitidos.includes(tipo) ? (tipo === 'admin' ? 'admins' : `${tipo}s`) : 'alunos';
 
     try {
         const senhaHash = await bcrypt.hash(senha, 10);
-        db.run("INSERT INTO usuarios (nome, email, senha, perfil) VALUES (?, ?, ?, ?)",
-            [nome, email, senhaHash, perfil || 'aluno'], function(err) {
-                if (err) {
-                    return res.status(400).json({ erro: "Este e-mail já está cadastrado." });
-                }
-                res.json({ mensagem: "Usuário cadastrado com sucesso!", id: this.lastID });
+        const query = `INSERT INTO ${tabelaDestino} (nome, email, senha) VALUES (?, ?, ?)`;
+
+        db.run(query, [nome, email, senhaHash], function(err) {
+            if (err) {
+                return res.status(400).json({ erro: "Este e-mail já está cadastrado." });
+            }
+            res.status(201).json({ 
+                mensagem: "Usuário cadastrado com sucesso!", 
+                id: this.lastID,
+                tipo: tipo || 'aluno'
             });
+        });
     } catch (e) {
         res.status(500).json({ erro: "Erro ao criptografar senha." });
     }
@@ -168,7 +264,21 @@ app.delete('/api/disciplinas/:codigo', (req, res) => {
 });
 
 app.get('/api/turmas', (req, res) => {
-    db.all("SELECT * FROM turmas", [], (err, rows) => {
+    const query = `
+        SELECT 
+            turmas.id, 
+            turmas.codigoDisciplina, 
+            turmas.idProfessor, 
+            professores.nome AS nomeProfessor,
+            turmas.dia, 
+            turmas.turno, 
+            turmas.horario, 
+            turmas.vagasTotais, 
+            turmas.vagasOcupadas 
+        FROM turmas
+        LEFT JOIN professores ON turmas.idProfessor = professores.id
+    `;
+    db.all(query, [], (err, rows) => {
         if (err) return res.status(500).json({ erro: err.message });
         res.json(rows);
     });
@@ -176,10 +286,10 @@ app.get('/api/turmas', (req, res) => {
 
 app.post('/api/turmas', (req, res) => {
     
-    const { codigoDisciplina, professor, dia, turno, horario, vagasTotais } = req.body;
+    const { codigoDisciplina, idProfessor, dia, turno, horario, vagasTotais } = req.body;
     const horarioFinal = (horario && horario.trim() !== "") ? horario : "08:00-09:40";
-    db.run("INSERT INTO turmas (codigoDisciplina, professor, dia, turno, horario, vagasTotais, vagasOcupadas) VALUES (?, ?, ?, ?, ?, ?, 0)",
-        [codigoDisciplina, professor, dia, turno, horarioFinal, vagasTotais], function(err) {
+    db.run("INSERT INTO turmas (codigoDisciplina, idProfessor, dia, turno, horario, vagasTotais, vagasOcupadas) VALUES (?, ?, ?, ?, ?, ?, 0)",
+        [codigoDisciplina, idProfessor, dia, turno, horarioFinal, vagasTotais], function(err) {
             if (err) return res.status(400).json({ erro: err.message });
             res.json({ mensagem: "Turma ofertada com sucesso!", id: this.lastID });
         });
@@ -255,7 +365,7 @@ app.post('/api/alunos', async (req, res) => {
 
     try {
         const senhaHash = await bcrypt.hash("123456", 10);
-        const query = `INSERT INTO usuarios (nome, email, senha, perfil) VALUES (?, ?, ?, 'aluno')`;
+        const query = `INSERT INTO alunos (nome, email, senha) VALUES (?, ?, ?)`;
         
         db.run(query, [nome, email, senhaHash], function(err) {
             if (err) {
@@ -264,8 +374,7 @@ app.post('/api/alunos', async (req, res) => {
             res.status(201).json({ 
                 id: this.lastID, 
                 nome, 
-                email, 
-                perfil: 'aluno',
+                email,                 
                 mensagem: 'Aluno cadastrado com sucesso! Senha padrão: 123456' 
             });
         });
@@ -275,7 +384,7 @@ app.post('/api/alunos', async (req, res) => {
 });
 
 app.get('/api/alunos', (req, res) => {
-    db.all(`SELECT id, nome, email FROM usuarios WHERE perfil = 'aluno'`, [], (err, rows) => {
+    db.all(`SELECT id, nome, email FROM alunos`, [], (err, rows) => {
         if (err) {
             return res.status(500).json({ error: 'Erro ao buscar alunos.' });
         }
@@ -298,8 +407,8 @@ app.delete('/api/alunos/:id', (req, res) => {
     }
 
     const query = `
-        DELETE FROM usuarios
-        WHERE id = ? AND perfil = 'aluno'
+        DELETE FROM alunos
+        WHERE id = ?
     `;
 
     db.run(query, [id], function(err) {
@@ -319,6 +428,86 @@ app.delete('/api/alunos/:id', (req, res) => {
 
         return res.json({
             mensagem: 'Aluno excluído com sucesso!',
+            id: id
+        });
+    });
+});
+
+// ==========================================
+// ROTAS DE GESTÃO DE PROFESSORES (ADMIN)
+// ==========================================
+
+app.post('/api/gestaoprofessores', async (req, res) => {
+    const { nome, email } = req.body;
+
+    if (!nome || !email) {
+        return res.status(400).json({ error: 'Nome e e-mail são obrigatórios.' });
+    }
+
+    try {
+        const senhaHash = await bcrypt.hash("123456", 10);
+        const query = `INSERT INTO professores (nome, email, senha) VALUES (?, ?, ?)`;
+        
+        db.run(query, [nome, email, senhaHash], function(err) {
+            if (err) {
+                return res.status(500).json({ error: 'Erro ao cadastrar professor (E-mail já cadastrado?).' });
+            }
+            res.status(201).json({ 
+                id: this.lastID, 
+                nome, 
+                email,                 
+                mensagem: 'Professor cadastrado com sucesso! Senha padrão: 123456' 
+            });
+        });
+    } catch (error) {
+        res.status(500).json({ error: 'Erro interno no servidor.' });
+    }
+});
+
+app.get('/api/gestaoprofessores', (req, res) => {
+    db.all(`SELECT id, nome, email FROM professores`, [], (err, rows) => {
+        if (err) {
+            return res.status(500).json({ error: 'Erro ao buscar professor.' });
+        }
+        res.json(rows);
+    });
+});
+
+// ==========================================
+// EXCLUIR PROFESSOR (ADMIN)
+// ==========================================
+
+app.delete('/api/gestaoprofessores/:id', (req, res) => {
+    const id = Number(req.params.id);
+
+    if (!Number.isInteger(id) || id <= 0) {
+        return res.status(400).json({
+            error: 'ID do professor inválido.'
+        });
+    }
+
+    const query = `
+        DELETE FROM professores
+        WHERE id = ?
+    `;
+
+    db.run(query, [id], function(err) {
+        if (err) {
+            console.error('Erro ao excluir professor:', err);
+
+            return res.status(500).json({
+                error: 'Erro ao excluir professor. Verifique se existem matrículas vinculadas.'
+            });
+        }
+
+        if (this.changes === 0) {
+            return res.status(404).json({
+                error: 'Professor não encontrado.'
+            });
+        }
+
+        return res.json({
+            mensagem: 'Professor excluído com sucesso!',
             id: id
         });
     });

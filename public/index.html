@@ -182,6 +182,13 @@
                     <span>Gestão de alunos</span>
                 </button>
 
+                <!-- NOVO BOTÃO: GESTÃO DE PROFESSORES -->
+
+                <button class="nav-link menu-instituicao" data-page="professoresGestao">
+                    <i class="bi bi-people"></i>
+                    <span>Gestão de Professores</span>
+                </button>
+
                 <!-- Menu exclusivo do professor -->
 
                 <button
@@ -725,14 +732,13 @@
                                         Professor
                                     </label>
 
-                                    <input
+                                    <select
                                         class="form-control"
                                         id="professorTurma"
-                                        required
-                                        maxlength="100"
-                                        placeholder="Nome do professor"
+                                        required                                                                               
                                     >
-
+                                        <option value="">Selecione um professor</option>
+                                    </select>
                                 </div>
 
 
@@ -1013,7 +1019,155 @@
                     </div>
 
                 </section>
+                <!-- ================================================== -->
+                <!-- GESTÃO DE PROFESSORES - NOVA TELA ADMINISTRATIVA -->
+                <!-- ================================================== -->
 
+                <section class="page-section" id="page-professoresGestao">
+
+                    <div class="page-intro">
+
+                        <div>
+                            <h3>Gestão de Professores</h3>
+                            <p>
+                                Cadastre professores e consulte os registros existentes.
+                            </p>
+                        </div>
+
+                    </div>
+
+
+                    <!-- Formulário de cadastro -->
+
+                    <div class="content-card mb-4">
+
+                        <h4 class="card-title-custom">
+                            <i class="bi bi-person-plus me-2"></i>
+                            Cadastrar professor
+                        </h4>
+
+                        <form id="formCadastrarProfessor">
+
+                            <div class="row g-3">
+
+                                <div class="col-12 col-md-6">
+
+                                    <label for="admiNomeProfessor" class="form-label">
+                                        Nome completo
+                                    </label>
+
+                                    <input
+                                        type="text"
+                                        class="form-control"
+                                        id="adminNomeProfessor"
+                                        placeholder="Digite o nome completo do professor"
+                                        maxlength="100"
+                                        required
+                                    >
+
+                                </div>
+
+
+                                <div class="col-12 col-md-6">
+
+                                    <label for="adminEmailProfessor" class="form-label">
+                                        E-mail institucional
+                                    </label>
+
+                                    <input
+                                        type="email"
+                                        class="form-control"
+                                        id="adminEmailProfessor"
+                                        placeholder="aluno@unimatricula.br"
+                                        maxlength="150"
+                                        required
+                                    >
+
+                                </div>
+
+                            </div>
+
+
+                            <button
+                                type="submit"
+                                class="btn btn-primary mt-4"
+                            >
+                                <i class="bi bi-person-plus me-2"></i>
+                                Cadastrar professor
+                            </button>
+
+                        </form>
+
+
+                        <div class="alert alert-info mt-3 mb-0 small">
+
+                            <i class="bi bi-info-circle me-2"></i>
+
+                            A senha inicial será definida pelo servidor como
+                            <strong>123456</strong>. O professor poderá utilizar
+                            esse acesso para entrar no sistema.
+
+                        </div>
+
+                    </div>
+                    <!-- Tabela de professores cadastrados -->
+
+                    <div class="content-card">
+
+                        <div class="section-heading">
+
+                            <div>
+                                <h4>Professores cadastrados</h4>
+                                <p>
+                                    Consulte os professores registrados no sistema.
+                                </p>
+                            </div>
+
+                            <button
+                                type="button"
+                                class="btn btn-outline-primary"
+                                onclick="carregarProfessoresAdmin()"
+                            >
+                                <i class="bi bi-arrow-clockwise me-2"></i>
+                                Atualizar
+                            </button>
+
+                        </div>
+
+
+                        <div class="table-responsive">
+
+                            <table class="table align-middle">
+
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Nome do professor</th>
+                                        <th>E-mail</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody id="tabelaProfessoresCorpo">
+
+                                    <tr>
+                                        <td
+                                            colspan="3"
+                                            class="text-center text-muted"
+                                        >
+                                            Carregando professores...
+                                        </td>
+                                    </tr>
+
+                                </tbody>
+
+                            </table>
+
+                        </div>
+
+                    </div>
+
+                </section>
 
                 <!-- ================================================== -->
                 <!-- ÁREA DO PROFESSOR -->
@@ -1063,7 +1217,7 @@
                                 <h3 id="professorTotalTurmas">0</h3>
 
                                 <small>
-                                    Turmas atribuídas ao seu perfil
+                                    Turmas atribuídas ao seu tipo
                                 </small>
 
                             </div>
@@ -1099,7 +1253,7 @@
 
                             <div>
                                 <h4>Resumo das minhas turmas</h4>
-                                <p>Disciplinas atribuídas ao seu perfil.</p>
+                                <p>Disciplinas atribuídas ao seu tipo.</p>
                             </div>
 
                         </div>
