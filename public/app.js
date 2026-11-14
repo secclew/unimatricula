@@ -1141,3 +1141,117 @@ async function excluirAluno(alunoId) {
     );
 }
 
+// ==========================================
+// NAVEGAÇÃO DE ABAS E ATUALIZAÇÃO AUTOMÁTICA
+// ==========================================
+document.querySelectorAll('.nav-link').forEach(link => {
+    link.addEventListener('click', function(e) {
+        e.preventDefault();
+
+        // 1. Alterna a classe 'active' no menu
+        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+        this.classList.add('active');
+
+        // 2. Pega qual página deve ser aberta
+        const pagina = this.getAttribute('data-page');
+        if (!pagina) return;
+
+        // 3. Esconde TODAS as seções da página
+        document.querySelectorAll('.page-section').forEach(section => {
+            section.style.display = 'none';
+        });
+
+        // 4. Mostra APENAS a seção correspondente (ex: page-gestaoMatriculas)
+        const secaoAlvo = document.getElementById(`page-${pagina}`);
+        if (secaoAlvo) {
+            secaoAlvo.style.display = 'block';
+        }
+
+        // 5. Atualiza os dados da API conforme a aba clicada
+        if (pagina === 'alunos' || pagina === 'disciplinasAluno') {
+            if (typeof carregarAlunosAdmin === 'function') {
+                carregarAlunosAdmin();
+            }
+        }
+        
+        if (pagina === 'gestaoMatriculas') {
+            if (typeof carregarGestaoMatriculas === 'function') {
+                carregarGestaoMatriculas();
+            }
+        }
+    });
+});
+
+// ==========================================
+// CARREGAR GESTÃO DE MATRÍCULAS (ADMIN)
+// ==========================================
+async function carregarGestaoMatriculas() {
+    const tbody = document.getElementById('listaMatriculas');
+    if (!tbody) return;
+
+    try {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">Carregando matrículas...</td></tr>`;
+
+        const resposta = await fetch(`${API_URL}/matriculas-admin`);
+        
+        if (!resposta.ok) {
+            throw new Error('Erro ao buscar matrículas no servidor.');
+        }
+
+        const matriculas = await resposta.json();
+        tbody.innerHTML = '';
+
+        if (matriculas.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">Nenhuma matrícula cadastrada no sistema.</td></tr>`;
+            return;
+        }
+
+        matriculas.forEach(item => {
+            tbody.innerHTML += `
+                <tr>
+                    <td><strong>${item.aluno || 'N/D'}</strong></td>
+                    <td>${item.disciplina || 'N/D'}</td>
+                    <td>${item.professor || 'N/D'}</td>
+                    <td>${item.dia ? `${item.dia} - ${item.horario}` : 'N/D'}</td>
+                    <td><span class="badge bg-secondary">${item.turno || 'N/D'}</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-danger" onclick="excluirMatriculaAdmin(${item.id})">
+                            <i class="bi bi-trash"></i> Excluir
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+
+    } catch (erro) {
+        console.error("Erro ao carregar gestão de matrículas:", erro);
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger">Erro ao carregar dados do servidor.</td></tr>`;
+    }
+}
+
+// ==========================================
+// EXCLUIR MATRÍCULA (ADMIN)
+// ==========================================
+async function excluirMatriculaAdmin(id) {
+    if (!confirm("Tem certeza que deseja remover esta matrícula do sistema?")) {
+        return;
+    }
+
+    try {
+        const resposta = await fetch(`${API_URL}/matriculas/${id}`, {
+            method: 'DELETE'
+        });
+
+        if (!resposta.ok) {
+            throw new Error('Erro ao excluir matrícula no servidor.');
+        }
+
+        // Recarrega a tabela automaticamente após a exclusão bem-sucedida
+        carregarGestaoMatriculas();
+        
+    } catch (erro) {
+        console.error("Erro ao excluir:", erro);
+        alert("Não foi possível excluir a matrícula.");
+    }
+}
+

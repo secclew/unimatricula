@@ -283,6 +283,33 @@ app.get('/api/alunos', (req, res) => {
     });
 });
 
+// ==========================================
+// 2. A NOVA ROTA PARA A GESTÃO DE MATRÍCULAS
+// ==========================================
+app.get('/api/matriculas-admin', (req, res) => {
+    const query = `
+        SELECT m.id, 
+               u.nome as aluno, 
+               d.nome as disciplina, 
+               t.professor, 
+               t.dia, 
+               t.horario, 
+               t.turno 
+        FROM matriculas m
+        JOIN usuarios u ON m.alunoId = u.id
+        JOIN turmas t ON m.turmaId = t.id
+        JOIN disciplinas d ON t.codigoDisciplina = d.codigo
+    `;
+
+    db.all(query, [], (err, rows) => {
+        if (err) {
+            console.error("Erro ao buscar matrículas:", err);
+            return res.status(500).json({ error: "Erro ao buscar matrículas no servidor." });
+        }
+        res.json(rows);
+    });
+});
+
 
 // ==========================================
 // EXCLUIR ALUNO (ADMIN)
@@ -321,6 +348,28 @@ app.delete('/api/alunos/:id', (req, res) => {
             mensagem: 'Aluno excluído com sucesso!',
             id: id
         });
+    });
+});
+
+// ==========================================
+// ROTA PARA EXCLUIR MATRÍCULA (ADMIN)
+// ==========================================
+app.delete('/api/matriculas/:id', (req, res) => {
+    const { id } = req.params;
+
+    const query = `DELETE FROM matriculas WHERE id = ?`;
+
+    db.run(query, [id], function(err) {
+        if (err) {
+            console.error("Erro ao excluir matrícula:", err.message);
+            return res.status(500).json({ error: "Erro ao excluir matrícula no banco de dados." });
+        }
+
+        if (this.changes === 0) {
+            return res.status(404).json({ error: "Matrícula não encontrada." });
+        }
+
+        res.json({ mensagem: "Matrícula excluída com sucesso!", idExcluido: id });
     });
 });
 
