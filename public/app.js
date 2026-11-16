@@ -56,7 +56,7 @@ if (
 ) {
     usuarioLogado = {
         id: 0,
-        nome: "Ana Souza",
+        nome: "Corpo Docente",
         email: "professor@unimatricula.br",
         perfil: "professor"
     };
@@ -501,6 +501,11 @@ function renderizarDashboard() {
 function obterTurmasDoProfessor() {
     if (usuarioLogado?.perfil !== "professor") return [];
 
+    // Modo universal: exibe todas as turmas ofertadas no sistema
+    if ((usuarioLogado.nome || "").trim() === "Corpo Docente") {
+        return dados.turmas;
+    }
+
     const nomeProfessor = (usuarioLogado.nome || "")
         .trim()
         .toLocaleLowerCase("pt-BR");
@@ -772,6 +777,8 @@ function renderizarMatriculas() {
     }).join("");
 }
 
+
+
 // 7. DISCIPLINAS COM API
 
 function renderizarDisciplinas() {
@@ -785,7 +792,7 @@ function renderizarDisciplinas() {
     }
 
     corpo.innerHTML = dados.disciplinas.map(disciplina => {
-        const possuiTurmas = dados.turmas.some(turma => turma.codigoDisciplina === disciplina.codigo || turma.disciplinaId === disciplina.id);
+        const possuiTurmas = dados.turmas.some(turma => turma.codigoDisciplina  === disciplina.codigo || turma.disciplinaId === disciplina.id);
 
         return `
             <tr>
@@ -1206,6 +1213,8 @@ async function carregarGestaoMatriculas() {
             return;
         }
 
+        const podeExcluir = usuarioLogado?.perfil === 'instituicao';
+
         matriculas.forEach(item => {
             tbody.innerHTML += `
                 <tr>
@@ -1232,7 +1241,13 @@ async function carregarGestaoMatriculas() {
 // ==========================================
 // EXCLUIR MATRÍCULA (ADMIN)
 // ==========================================
-async function excluirMatriculaAdmin(id) {
+async function excluirMatriculaAdmin(id) { 
+
+    if (usuarioLogado?.perfil !== 'instituicao') {
+        mostrarMensagem("O perfil de professor não tem permissão para excluir matrículas.", "warning");
+        return;
+    }
+
     if (!confirm("Tem certeza que deseja remover esta matrícula do sistema?")) {
         return;
     }

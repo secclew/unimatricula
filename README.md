@@ -150,3 +150,9 @@ Visão Institucional: O gestor pode cadastrar disciplinas, ofertar turmas (defin
 Visão do Aluno: O aluno pode navegar pelas turmas abertas, verificar vagas em tempo real e realizar ou cancelar as suas matrículas.
 
 UX Moderna: Interface limpa construída com Bootstrap 5, incluindo suporte a alternância de visibilidade de senha (mostrar/ocultar).
+
+Grupo01:
+Paula Antunes
+Erick Jordan
+João Paulo Witusk
+Eduardo Bastos Lewandowski
